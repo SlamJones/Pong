@@ -22,9 +22,11 @@ settings = {
     "bg_color": "black",
     "fg_color": "white",
     "button_height": 50,
-    "button_width": 200,
+    "button_width": 250,
+    "button_spacing": 40,
+    "text_spacing": 40,
     "demo_mode": False,
-    "color_shift": 10,
+    "color_shift": 5,
 }
 
 levels = [
@@ -63,6 +65,224 @@ def main():
     ##
     ##
     win.close()
+    
+    
+def view_settings(win):
+    to_draw = []    
+    to_draw,buttons = draw_settings(win,to_draw)
+    
+    ### 
+    for item in to_draw:
+        item.draw(win)
+    #########
+    ## Stuff what be done goes here yo ##    
+    choice = "default"
+    while choice != "":
+        click = win.getMouse()
+        clickX = click.getX()
+        clickY = click.getY()
+        choice = ""
+        for button in buttons:
+            if clickX >= button["x1"] and clickX <= button["x2"] and clickY >= button["y1"] and clickY <= button["y2"]:
+                choice = button["name"]
+                print("Clicked on {} button".format(choice))
+                adjust_setting(win,choice)
+                redraw(win,to_draw)
+                #to_draw,buttons = draw_settings(win,to_draw)
+                win.update()
+        if choice == "":
+            break
+
+            
+    #########
+    for item in to_draw:
+        item.undraw()
+    ###
+    
+    
+def draw_settings(win,to_draw):
+    for item in to_draw:
+        item.undraw()
+    
+    to_draw = []
+    buttons = []
+    
+    centerX = int(settings["window_x"]/2)
+    centerY = int(settings["window_y"]/2)
+    
+    leftcol_centerX = int(centerX / 2)
+    rightcol_centerX = centerX + leftcol_centerX
+    
+    header_height = settings["button_height"] + settings["button_spacing"]*2
+    total_button_height = settings["button_height"] + settings["button_spacing"]
+
+    ### Max buttons per column is limited by window Y ###
+    ### Total height of button is (button + button_spacing)*number_of_buttons + header_height ###
+    max_buttons_per_column = int((settings["window_y"]-header_height)/total_button_height)
+    
+    print("{} settings: {} buttons per column".format(
+        str(len(settings)),str(max_buttons_per_column)))
+    
+    if max_buttons_per_column < len(settings):
+        columns = 2
+        print("Two columns needed")
+    else:
+        columns = 1
+        print("One column needed")
+        
+    title = Text(Point(centerX, settings["button_spacing"]), "SETTINGS")
+    title.setTextColor(settings["fg_color"])
+    title.setSize(24)
+    title.setStyle("bold")
+    to_draw.append(title)
+    
+    #### COUNT TITLE AS A BUTTON FOR SPACING PURPOSES ####
+    buttons_made = 2
+    column = 1
+    
+    for item in settings:
+        button_name = item
+        button_value = settings[item]
+        button_string = ("{}: {}".format(button_name, button_value))
+        
+        if columns == 1:
+            box_P1X = centerX - settings["button_width"]/2
+            box_P1Y = (settings["button_height"]*buttons_made) + settings["button_spacing"]*buttons_made
+            box_P2X = box_P1X + settings["button_width"]
+            box_P2Y = box_P1Y + settings["button_height"]
+        elif columns == 2:
+            if buttons_made-2 >= max_buttons_per_column:
+                column = 2
+                print("Column 2")
+            else:
+                column = 1
+                print("Column 1")
+            if column == 1:
+                box_P1X = (centerX - settings["button_width"]/2) - settings["button_width"]*2
+                box_P1Y = (settings["button_height"]*buttons_made) + settings["button_spacing"]*buttons_made
+                box_P2X = box_P1X + settings["button_width"]
+                box_P2Y = box_P1Y + settings["button_height"]
+            elif column == 2:
+                box_P1X = (centerX - settings["button_width"]/2) + settings["button_width"]*2
+                box_P1Y = (settings["button_height"]*(buttons_made - max_buttons_per_column)) + (settings["button_spacing"]*(buttons_made - max_buttons_per_column))
+                box_P2X = box_P1X + settings["button_width"] 
+                box_P2Y = box_P1Y + settings["button_height"]
+                #print("{},{}  x  {},{}".format(
+                #    str(box_P1X),str(box_P1Y),str(box_P2X),str(box_P2Y)))
+        
+        buttons_made += 1
+        print("Buttons made: "+str(buttons_made))
+        
+        buttons.append(
+            {"name": button_name,
+             "value": button_value,
+             "x1": box_P1X,
+             "y1": box_P1Y,
+             "x2": box_P2X,
+             "y2": box_P2Y,
+            })
+        
+        box_centerX = (box_P1X + box_P2X)/2
+        box_centerY = (box_P1Y + box_P2Y)/2
+        
+        box = Rectangle(Point(box_P1X,box_P1Y),Point(box_P2X,box_P2Y))
+        box.setFill(settings["bg_color"])
+        box.setOutline(settings["fg_color"])
+        box.setWidth(2)
+        
+        box_text = Text(Point(box_centerX,box_centerY),button_string)
+        box_text.setTextColor(settings["fg_color"])
+        
+        to_draw.append(box)
+        to_draw.append(box_text)
+        
+    return(to_draw,buttons)
+
+    
+def redraw(win,to_draw):
+    for item in to_draw:
+        item.undraw()
+    win.update()
+    for item in to_draw:
+        try:
+            item.setColor(settings["fg_color"])
+        except:
+            pass
+        try:
+            item.setTextColor(settings["fg_color"])
+        except:
+            pass
+        item.setOutline(settings["fg_color"])
+        item.draw(win)
+    win.setBackground(settings["bg_color"])
+    win.update()
+    
+    
+def adjust_setting(win,setting_name):
+    ### Draw a box with text, entry, and two buttons ("Accept", "Cancel") ###
+    to_draw = []
+    
+    for setting in settings:
+        if setting_name == setting:
+            setting_value = settings[setting]
+            print("Setting: "+str(setting))
+            print("Setting value: "+str(setting_value))
+    
+    centerX = settings["window_x"]/2
+    centerY = settings["window_y"]/2
+    
+    box_P1X = centerX - settings["button_width"]
+    box_P2X = centerX + settings["button_width"]
+    box_P1Y = centerY - settings["button_height"]*4
+    box_P2Y = centerY + settings["button_height"]*4
+    box_centerX = (box_P1X + box_P2X)/2
+    box_centerY = (box_P1Y + box_P2Y)/2
+    box_topY = box_P1Y
+    
+    box = Rectangle(Point(box_P1X,box_P1Y),Point(box_P2X,box_P2Y))
+    box.setFill(settings["bg_color"])
+    box.setOutline(settings["fg_color"])
+    box.setWidth(3)
+    to_draw.append(box)
+    
+    title = Text(
+        Point(box_centerX,box_topY + settings["button_spacing"]),setting_name)
+    title.setTextColor(settings["fg_color"])
+    title.setSize(24)
+    title.setStyle("bold")
+    to_draw.append(title)
+    
+    value = Text(
+        Point(box_centerX,box_topY + settings["button_spacing"]*2),str(setting_value))
+    value.setTextColor(settings["fg_color"])
+    value.setSize(18)
+    to_draw.append(value)
+    
+    entry = Entry(Point(box_centerX,box_topY + settings["button_spacing"]*4),16)
+    entry.setText(str(setting_value))
+    entry.setTextColor("black")
+    entry.setFill("white")
+    to_draw.append(entry)
+    
+    
+    for item in to_draw:
+        item.draw(win)
+        
+    #####
+    win.getMouse()
+    new_value = entry.getText()
+    
+    entry.undraw()
+    for setting in settings:
+        if setting == setting_name:
+            if new_value.isdigit():
+                new_value = int(new_value)
+            settings[setting] = new_value
+            show_info_box(win,"New value set!\nRe-open settings to see new values.")
+    entry.draw(win)
+    
+    for item in to_draw:
+        item.undraw()
     
     
 def draw_title(win):
@@ -153,6 +373,7 @@ def draw_menu(win):
     choice = ""
     
     while choice != "Quit":
+        choice = ""
         click = win.getMouse()
         click_x = click.getX()
         click_y = click.getY()
@@ -167,8 +388,9 @@ def draw_menu(win):
             for item in to_draw:
                 item.undraw()
             win.update()
-
+            ####
             draw_game(win)
+            ####
             for item in to_draw:
                 item.draw(win)
             win.update()
@@ -185,8 +407,18 @@ def draw_menu(win):
                 item.draw(win)
             win.update()
             settings["demo_mode"] = False
+        elif choice == "Settings":
+            for item in to_draw:
+                item.undraw()
+            win.update()
+            ####
+            view_settings(win)
+            ####
+            for item in to_draw:
+                item.draw(win)
+            win.update()
         else:
-            pass
+            choice = ""
     
     
 def draw_game(win):
@@ -241,14 +473,56 @@ def draw_game(win):
     win.update()
     ####
     
-    print("Hit any key to continue")
-    win.getKey()
+    show_info_box(win,"Hit any key to continue")
     play_game(win,to_draw,ball,paddles,scores)
     
     ####
     for item in to_draw:
         item.undraw()
     win.update()
+    
+    
+def show_info_box(win,text):
+    to_draw = []
+    
+    box_width = len(text) * 20
+    
+    if len(text) > 30:
+        height = 2
+    else:
+        height = 1
+    
+    centerX = int(settings["window_x"]/2)
+    centerY = int(settings["window_y"]/2)
+    rect_P1X = centerX - box_width/2
+    rect_P2X = centerX + box_width/2
+    rect_P1Y = centerY - (settings["button_height"]/2)*height
+    rect_P2Y = centerY + (settings["button_height"]/2)*height
+    
+    rect = Rectangle(Point(rect_P1X,rect_P1Y),Point(rect_P2X,rect_P2Y))
+    rect.setFill(settings["bg_color"])
+    rect.setOutline(settings["fg_color"])
+    rect.setWidth(3)
+    to_draw.append(rect)
+    
+    info_text = Text(Point(centerX,centerY),text)
+    info_text.setTextColor(settings["fg_color"])
+    info_text.setStyle("bold")
+    info_text.setSize(20)
+    to_draw.append(info_text)
+    
+    for item in to_draw:
+        item.draw(win)
+        
+    key = ""
+    click = None
+    while key == "" and click == None:
+        key = win.checkKey()
+        click = win.checkMouse()
+    time.sleep(1)
+    
+    for item in to_draw:
+        item.undraw()
     
     
 def play_game(win,to_draw,ball,paddles,scores):
@@ -263,7 +537,7 @@ def play_game(win,to_draw,ball,paddles,scores):
     left_paddle = paddles[0]
     right_paddle = paddles[1]
     while play:
-        if color_score >= 5:
+        if color_score >= settings["color_shift"]:
             next_color(win)
             color_score = 0
             
@@ -307,26 +581,45 @@ def next_color(win):
     win.setBackground(settings["bg_color"])
     if settings["paddle_speed"] < settings["paddle_speed_max"]:
         settings["paddle_speed"] += 1
-        #settings["paddle_inset"] += 2
     if settings["ball_speed"] < settings["ball_speed_max"]:
         settings["ball_speed"] += 1
         
         
 def move_ai_paddle(win,ball,paddles):
+    choices = ["Straight","Tilt Up","Tilt Down"]
+    shot = random.choice(choices)
+    
     ball_center = ball.getCenter()
     ball_x = ball_center.getX()
     ball_y = ball_center.getY()
     
-    paddle_center = paddles[0].getCenter()
-    paddle_y = paddle_center.getY()
+    if shot == "Straight":
+        paddle_center = paddles[0].getCenter()
+        paddle_y = paddle_center.getY()
+    elif shot == "Tilt Up":
+        paddle_center = paddles[0].getP1()
+        paddle_y = paddle_center.getY()
+    elif shot == "Tilt Down":
+        paddle_center = paddles[0].getP2()
+        paddle_y = paddle_center.getY()
+        
     if ball_y < paddle_y:
         paddles[0].move(0,-settings["paddle_speed"])
     elif ball_y > paddle_y:
         paddles[0].move(0,settings["paddle_speed"])
         
     if settings["demo_mode"]:
-        paddle_center = paddles[1].getCenter()
-        paddle_y = paddle_center.getY()
+        shot = random.choice(choices)
+        if shot == "Straight":
+            paddle_center = paddles[1].getCenter()
+            paddle_y = paddle_center.getY()
+        elif shot == "Tilt Up":
+            paddle_center = paddles[1].getP1()
+            paddle_y = paddle_center.getY()
+        elif shot == "Tilt Down":
+            paddle_center = paddles[1].getP2()
+            paddle_y = paddle_center.getY()
+            
         if ball_y < paddle_y:
             paddles[1].move(0,-settings["paddle_speed"])
         elif ball_y > paddle_y:
