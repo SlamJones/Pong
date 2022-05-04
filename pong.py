@@ -86,7 +86,7 @@ def view_settings(win):
             if clickX >= button["x1"] and clickX <= button["x2"] and clickY >= button["y1"] and clickY <= button["y2"]:
                 choice = button["name"]
                 print("Clicked on {} button".format(choice))
-                adjust_setting(win,choice)
+                adjust_setting(win,choice,button)
                 redraw(win,to_draw)
                 #to_draw,buttons = draw_settings(win,to_draw)
                 win.update()
@@ -170,17 +170,6 @@ def draw_settings(win,to_draw):
                 #print("{},{}  x  {},{}".format(
                 #    str(box_P1X),str(box_P1Y),str(box_P2X),str(box_P2Y)))
         
-        buttons_made += 1
-        print("Buttons made: "+str(buttons_made))
-        
-        buttons.append(
-            {"name": button_name,
-             "value": button_value,
-             "x1": box_P1X,
-             "y1": box_P1Y,
-             "x2": box_P2X,
-             "y2": box_P2Y,
-            })
         
         box_centerX = (box_P1X + box_P2X)/2
         box_centerY = (box_P1Y + box_P2Y)/2
@@ -192,6 +181,20 @@ def draw_settings(win,to_draw):
         
         box_text = Text(Point(box_centerX,box_centerY),button_string)
         box_text.setTextColor(settings["fg_color"])
+        
+        buttons_made += 1
+        print("Buttons made: "+str(buttons_made))
+        
+        buttons.append(
+            {"name": button_name,
+             "value": button_value,
+             "x1": box_P1X,
+             "y1": box_P1Y,
+             "x2": box_P2X,
+             "y2": box_P2Y,
+             "box": box,
+             "text": box_text,
+            })
         
         to_draw.append(box)
         to_draw.append(box_text)
@@ -218,7 +221,7 @@ def redraw(win,to_draw):
     win.update()
     
     
-def adjust_setting(win,setting_name):
+def adjust_setting(win,setting_name,button):
     ### Draw a box with text, entry, and two buttons ("Accept", "Cancel") ###
     to_draw = []
     
@@ -278,7 +281,8 @@ def adjust_setting(win,setting_name):
             if new_value.isdigit():
                 new_value = int(new_value)
             settings[setting] = new_value
-            show_info_box(win,"New value set!\nRe-open settings to see new values.")
+            button["text"].setText(setting+": "+str(new_value))
+            show_info_box(win,"New value set!\nRe-open settings for some values to take effect.")
     entry.draw(win)
     
     for item in to_draw:
